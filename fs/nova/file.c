@@ -706,9 +706,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	if (ret)
 		goto out;
 
-	//queued_spin_lock(&sih->time_lock);
 	inode->i_ctime = inode->i_mtime = current_time(inode);
-	//queued_spin_unlock(&sih->time_lock);
 	time = current_time(inode).tv_sec;
 
 	nova_dbgv("%s: inode %lu, offset %lld, count %lu\n",
@@ -717,14 +715,14 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	epoch_id = nova_get_epoch_id(sb);
 
 	while (num_blocks > 0) {
-		queued_spin_lock(&sih->tail_lock);
+		spin_lock(&sih->tail_lock);
 		update.tail = sih->log_tail;
 		update.alter_tail = sih->alter_log_tail;
 		/* Get the size of FILE_WRITE entry */
 		log_entry_size = nova_get_log_entry_size(sb, 1);
 		curr_p = nova_get_append_head(sb, pi, sih, update.tail, log_entry_size, MAIN_LOG, 0, &extended);
 		sih->log_tail = new_tail = curr_p + log_entry_size;
-		queued_spin_unlock(&sih->tail_lock);
+		spin_unlock(&sih->tail_lock);
 
 		offset = pos & (nova_inode_blk_size(sih) - 1);
 		start_blk = pos >> sb->s_blocksize_bits;
@@ -775,22 +773,20 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 		}
 		/* To do: update sih->i_size HERE to make file_size valid
 		 *          We also need synchronization */
-		queued_spin_lock(&sih->size_lock);
+		spin_lock(&sih->size_lock);
 		if (pos + copied > sih->i_size)
 			file_size = cpu_to_le64(pos + copied);
 		else
 			file_size = cpu_to_le64(sih->i_size);
 		sih->i_size = file_size;
-		queued_spin_unlock(&sih->size_lock);
+		spin_unlock(&sih->size_lock);
 
-		//queued_spin_lock(&sih->log_lock);
 		nova_init_file_write_entry(sb, sih, &entry_data, epoch_id,
 				start_blk, allocated, blocknr, time,
 				file_size);
 
 		ret = nova_append_file_write_entry_parallel(sb, pi, inode,
 				&entry_data, &update, curr_p);
-		//queued_spin_unlock(&sih->log_lock);
 
 		if (ret) {
 			nova_dbg("%s: append inode entry failed\n", __func__);
@@ -824,11 +820,11 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	/* Update tail periodically */
 	if(is_last_entry(update.tail, log_entry_size)){
 		/* Only single thread performs periodic pmem tail update */
-		if(queued_spin_trylock(&sih->alloc_lock) == 0) goto updated;
-		queued_spin_lock(&sih->tail_lock);
+		if(spin_trylock(&sih->alloc_lock) == 0) goto updated;
+		spin_lock(&sih->tail_lock);
 		curr_tail = pi->log_tail;
 		curr_sih_tail = sih->log_tail;
-		queued_spin_unlock(&sih->tail_lock);	
+		spin_unlock(&sih->tail_lock);	
 		prv_tail = curr_tail;
 		while(curr_tail != curr_sih_tail){
 			if(is_last_entry(curr_tail, log_entry_size)){
@@ -853,31 +849,31 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 		pi->log_tail = curr_tail;
 		nova_flush_buffer(&pi->log_tail, CACHELINE_SIZE, 1);
 	}
-	queued_spin_unlock(&sih->alloc_lock);
+	spin_unlock(&sih->alloc_lock);
 
 updated:
 	data_bits = blk_type_to_shift[sih->i_blk_type];
-	queued_spin_lock(&sih->block_lock);
+	spin_lock(&sih->block_lock);
 	sih->i_blocks += (total_blocks << (data_bits - sb->s_blocksize_bits));
-	queued_spin_unlock(&sih->block_lock);
+	spin_unlock(&sih->block_lock);
 
 	nova_memunlock_inode(sb, pi);
-	queued_spin_lock(&sih->tail_lock);
+	spin_lock(&sih->tail_lock);
 	nova_update_inode(sb, inode, pi, &update, 1);
-	queued_spin_unlock(&sih->tail_lock);
+	spin_unlock(&sih->tail_lock);
 	nova_memlock_inode(sb, pi);
 
 	/* Free the overlap blocks after the write is committed */
 	//inode_lock(inode);
-	queued_spin_lock(&sih->tree_lock);
+	spin_lock(&sih->tree_lock);
 	ret = nova_reassign_file_tree_parallel(sb, sih, begin_tail, new_tail);
 	if (ret){
-		queued_spin_unlock(&sih->tree_lock);
+		spin_unlock(&sih->tree_lock);
 		goto out;
 	}
 
 	inode->i_blocks = sih->i_blocks;
-	queued_spin_unlock(&sih->tree_lock);
+	spin_unlock(&sih->tree_lock);
 	//inode_unlock(inode);
 
 	ret = written;
@@ -886,14 +882,14 @@ updated:
 
 	*ppos = pos;
 	//inode_lock(inode);
-	queued_spin_lock(&sih->size_lock);
+	spin_lock(&sih->size_lock);
 	if (pos > inode->i_size) {
 		i_size_write(inode, pos);
 		//sih->i_size = pos;
 	}
 
 	sih->trans_id++;
-	queued_spin_unlock(&sih->size_lock);
+	spin_unlock(&sih->size_lock);
 out:
 	if (ret < 0)
 		nova_cleanup_incomplete_write(sb, sih, blocknr, allocated,
