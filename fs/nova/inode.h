@@ -45,8 +45,8 @@ struct nova_inode {
 	__le32	i_create_time;	 /* Create time */
 	__le64	nova_ino;	 /* nova inode number */
 
-	__le64	log_head;	 /* Log head pointer */
-	__le64	log_tail;	 /* Log tail pointer */
+	__le64	percpu_log_head; /* Head pointer of percpu_log */
+	__le64	trash;		 /* Not used */
 
 	/* last 40 bytes */
 	__le64	alter_log_head;	 /* Alternate log head pointer */
