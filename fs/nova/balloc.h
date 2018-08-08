@@ -65,6 +65,7 @@ enum nova_alloc_init {ALLOC_NO_INIT = 0,
 enum alloc_type {
 	LOG = 1,
 	DATA,
+	PER_CPU,
 };
 
 

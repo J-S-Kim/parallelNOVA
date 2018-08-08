@@ -37,6 +37,7 @@
 void nova_init_header(struct super_block *sb,
 	struct nova_inode_info_header *sih, u16 i_mode)
 {
+		
 	sih->log_pages = 0;
 	sih->i_size = 0;
 	sih->ino = 0;
@@ -58,6 +59,10 @@ void nova_init_header(struct super_block *sb,
 	sih->trans_id = 0;
 	sih->log_head = 0;
 	sih->log_tail = 0;
+	for(int i=0;i<120;i++){
+		sih->percpu_log_head[i].log_head=0;
+		sih->percpu_log_head[i].log_tail=0;
+	}
 	sih->alter_log_head = 0;
 	sih->alter_log_tail = 0;
 	sih->i_blk_type = NOVA_DEFAULT_BLOCK_TYPE;

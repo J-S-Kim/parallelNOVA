@@ -452,6 +452,7 @@ static int nova_append_log_entry(struct super_block *sb,
 	return 0;
 }
 
+
 int nova_inplace_update_log_entry(struct super_block *sb,
 	struct inode *inode, void *entry,
 	struct nova_log_entry_info *entry_info)
@@ -1150,6 +1151,7 @@ static int nova_initialize_inode_log(struct super_block *sb,
 {
 	u64 new_block;
 	int allocated;
+	int cpuid = nova_get_cpuid(sb);
 
 	allocated = nova_allocate_inode_log_pages(sb, sih,
 					1, &new_block, ANY_CPU,
@@ -1162,10 +1164,10 @@ static int nova_initialize_inode_log(struct super_block *sb,
 
 	nova_memunlock_inode(sb, pi);
 	if (log_id == MAIN_LOG) {
-		pi->log_tail = new_block;
+		pi->percpu_log_head[cpuid].log_tail = new_block;
 		nova_flush_buffer(&pi->log_tail, CACHELINE_SIZE, 0);
-		pi->log_head = new_block;
-		sih->log_head = sih->log_tail = new_block;
+		pi->percpu_log_head[cpuid].log_head = new_block;
+		sih->percpu_log_head[cpuid].log_head = sih->percpu_log_head[cpuid].log_tail = new_block;
 		sih->log_pages = 1;
 		nova_flush_buffer(&pi->log_head, CACHELINE_SIZE, 1);
 	} else {
@@ -1297,13 +1299,15 @@ u64 nova_get_append_head(struct super_block *sb, struct nova_inode *pi,
 	int thorough_gc, int *extended)
 {
 	u64 curr_p;
+	int cpuid = nova_get_cpuid(sb);
 
 	if (tail)
 		curr_p = tail;
 	else if (log_id == MAIN_LOG)
-		curr_p = sih->log_tail;
+		curr_p = sih->percpu_log_head[cpuid].log_tail;
 	else
-		curr_p = sih->alter_log_tail;
+		//curr_p = sih->alter_log_tail;
+		curr_p = sih->percpu_log_head[cpuid].log_tail;
 
 	if (curr_p == 0 || (is_last_entry(curr_p, size) &&
 				next_log_page(sb, curr_p) == 0)) {

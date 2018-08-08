@@ -135,6 +135,8 @@ static int nova_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	u64 pi_addr = 0;
 	u64 ino, epoch_id;
 	timing_t create_time;
+	unsigned long blocknr = 0;
+	int allocated=0; 
 
 	NOVA_START_TIMING(create_t, create_time);
 
@@ -164,6 +166,13 @@ static int nova_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	unlock_new_inode(inode);
 
 	pi = nova_get_block(sb, pi_addr);
+	/*
+	 * for per cpu log
+	 */
+	allocated = nova_new_blocks(sb, &blocknr, 1, 0, ALLOC_NO_INIT, PER_CPU, ANY_CPU, ALLOC_FROM_HEAD);
+	pi->percpu_log_head = nova_get_block_off(sb, blocknr, 0);
+
+
 	nova_lite_transaction_for_new_inode(sb, pi, pidir, inode, dir,
 						&update);
 	NOVA_END_TIMING(create_t, create_time);

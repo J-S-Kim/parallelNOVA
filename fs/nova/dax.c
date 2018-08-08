@@ -150,10 +150,10 @@ int nova_reassign_file_tree(struct super_block *sb,
 	struct nova_file_write_entry *entryc, entry_copy;
 	u64 curr_p = begin_tail;
 	size_t entry_size = sizeof(struct nova_file_write_entry);
-
+	int cpuid = nova_get_cpuid(sb);
 	entryc = (metadata_csum == 0) ? entry : &entry_copy;
 
-	while (curr_p && curr_p != sih->log_tail) {
+	while (curr_p && curr_p != sih->percpu_log_head[cpuid].log_tail) {
 		if (is_last_entry(curr_p, entry_size))
 			curr_p = next_log_page(sb, curr_p);
 

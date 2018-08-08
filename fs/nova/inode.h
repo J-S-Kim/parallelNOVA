@@ -70,6 +70,13 @@ struct nova_inode {
 struct inode_table {
 	__le64 log_head;
 };
+/*
+ * For per-cpu log 
+ */
+struct percpu_log_head{
+	u64 log_head;
+	u64 log_tail;
+};
 
 /*
  * NOVA-specific inode state kept in DRAM
@@ -109,7 +116,7 @@ struct nova_inode_info_header {
 	struct qspinlock log_lock;
 	struct qspinlock block_lock;
 	struct qspinlock tree_lock;
-		
+	struct precpu_log_head percpu_log_head[120];		
 };
 
 /* For rebuild purpose, temporarily store pi infomation */
@@ -224,6 +231,25 @@ static inline void nova_update_tail(struct nova_inode *pi, u64 new_tail)
 	NOVA_END_TIMING(update_tail_t, update_time);
 }
 
+static inline void nova_update_tail_parallel(struct nova_inode *pi, u64 new_tail, int cpuid)
+{
+	timing_t update_time;
+	void* percpu_log;
+	struct percpu_log_head* percpu_pi;
+
+	NOVA_START_TIMING(update_tail_t, update_time);
+
+	PERSISTENT_BARRIER();
+
+	percpu_log = pi->percpu_log_head + cpuid * sizeof(struct percpu_log_head);
+	percpu_pi = (struct percpu_log_head *) percpu_log;
+	percpu_pi->log_tail = new_tail;
+
+	nova_flush_buffer(&percpu_pi->log_tail, CACHELINE_SIZE, 1);
+
+	NOVA_END_TIMING(update_tail_t, update_time);
+}
+
 static inline void nova_update_alter_tail(struct nova_inode *pi, u64 new_tail)
 {
 	timing_t update_time;
@@ -255,6 +281,27 @@ static inline void nova_update_inode(struct super_block *sb,
 
     /* To do: Postpone nvm tail update for parallelism */
 	nova_update_tail(pi, update->tail);
+
+	if (metadata_csum)
+		nova_update_alter_tail(pi, update->alter_tail);
+
+	nova_update_inode_checksum(pi);
+	if (inode && update_alter)
+		nova_update_alter_inode(sb, inode, pi);
+}
+
+static inline void nova_update_inode_parallel(struct super_block *sb,
+	struct inode *inode, struct nova_inode *pi,
+	struct nova_inode_update *update, int update_alter, int cpuid)
+{
+	struct nova_inode_info *si = NOVA_I(inode);
+	struct nova_inode_info_header *sih = &si->header;
+
+	sih->percpu_log_head[cpuid].log_tail = update->tail;
+	//sih->alter_log_tail = update->alter_tail;
+
+    /* To do: Postpone nvm tail update for parallelism */
+	nova_update_tail_parallel(pi, update->tail, cpuid);
 
 	if (metadata_csum)
 		nova_update_alter_tail(pi, update->alter_tail);

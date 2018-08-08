@@ -648,6 +648,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	u64 epoch_id;
 	u32 time;
 	struct range_lock nova_inode_lock;
+	int cpuid;
 
 	if (len == 0)
 		return 0;
@@ -680,6 +681,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	num_blocks = ((count + offset - 1) >> sb->s_blocksize_bits) + 1;
 	total_blocks = num_blocks;
 	start_blk = pos >> sb->s_blocksize_bits;
+	cpuid = nova_get_cpuid(sb);
 
 	range_lock_init(&nova_inode_lock, start_blk, start_blk + num_blocks - 1);
 	range_write_lock(&(sih->range_lock_tree), &nova_inode_lock);
@@ -708,10 +710,17 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 			__func__, inode->i_ino,	pos, count);
 
 	epoch_id = nova_get_epoch_id(sb);
-    inode_lock(inode);
+    	/*inode_lock(inode);
 	update.tail = sih->log_tail;
 	update.alter_tail = sih->alter_log_tail;
-    inode_unlock(inode);
+    	inode_unlock(inode);
+	*/
+
+	update.tail = sih->percpu_log_head[cpuid].log_tail;
+	//TODO : implementation alter_tail
+	//update.alter_tail = sih->percpu_log_head[cpuid].alter_log_tail;
+	update.alter_tail = sih->percpu_log_head[cpuid].log_tail;
+	
 	while (num_blocks > 0) {
 		offset = pos & (nova_inode_blk_size(sih) - 1);
 		start_blk = pos >> sb->s_blocksize_bits;
@@ -812,7 +821,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	sih->i_blocks += (total_blocks << (data_bits - sb->s_blocksize_bits));
 
 	nova_memunlock_inode(sb, pi);
-	nova_update_inode(sb, inode, pi, &update, 1);
+	nova_update_inode_parallel(sb, inode, pi, &update, 1, cpuid);
     inode_unlock(inode);
 	nova_memlock_inode(sb, pi);
 
