@@ -215,6 +215,7 @@ int nova_append_dir_init_entries(struct super_block *sb,
 	u64 new_block;
 	unsigned int length;
 	struct nova_dentry *de_entry;
+	struct percpu_log_head *percpu_pi_log_head;
 
 	sih.ino = self_ino;
 	sih.i_blk_type = NOVA_DEFAULT_BLOCK_TYPE;
@@ -228,13 +229,15 @@ int nova_append_dir_init_entries(struct super_block *sb,
 
 	nova_memunlock_inode(sb, pi);
 
-	pi->log_tail = pi->log_head = new_block;
+	//pi->log_tail = pi->log_head = new_block;
+	percpu_pi_log_head = pi->percpu_log_head;
+	percpu_pi_log_head->log_head=percpu_pi_log_head->log_tail=new_block;	
 
 	de_entry = (struct nova_dentry *)nova_get_block(sb, new_block);
 
 	length = nova_init_dentry(sb, de_entry, self_ino, parent_ino, epoch_id);
 
-	nova_update_tail(pi, new_block + length);
+	nova_update_tail(pi, new_block + length, 0);
 
 	nova_memlock_inode(sb, pi);
 
@@ -254,9 +257,10 @@ int nova_append_dir_init_entries(struct super_block *sb,
 
 	length = nova_init_dentry(sb, de_entry, self_ino, parent_ino, epoch_id);
 
-	nova_update_alter_tail(pi, new_block + length);
-	nova_update_alter_pages(sb, pi, pi->log_head,
-						pi->alter_log_head);
+	//nova_update_alter_tail(pi, new_block + length);
+	//nova_update_alter_pages(sb, pi, pi->log_head,
+	//					pi->alter_log_head);
+
 	nova_update_inode_checksum(pi);
 	nova_flush_buffer(pi, sizeof(struct nova_inode), 0);
 	nova_memlock_inode(sb, pi);
@@ -417,10 +421,12 @@ int nova_remove_dentry(struct dentry *dentry, int dec_link,
 		/* Leave create/delete_dentry to NULL
 		 * Do not change tail/alter_tail if used as input
 		 */
+		/*
 		if (update->tail == 0) {
 			update->tail = sih->log_tail;
 			update->alter_tail = sih->alter_log_tail;
 		}
+		*/
 		sih->trans_id++;
 		goto out;
 	}
@@ -618,16 +624,17 @@ static int nova_readdir_fast(struct file *file, struct dir_context *ctx)
 	nova_dbgv("%s: ino %llu, size %llu, pos 0x%llx\n",
 			__func__, (u64)inode->i_ino,
 			pidir->i_size, ctx->pos);
-
+/*
 	if (sih->log_head == 0) {
 		nova_err(sb, "Dir %lu log is NULL!\n", inode->i_ino);
 		return -ENOSPC;
 	}
-
+*/
 	pos = ctx->pos;
 
 	if (pos == 0)
-		curr_p = sih->log_head;
+		//curr_p = sih->log_head;
+		curr_p = sih->percpu_log_head[0].log_head;
 	else if (pos == READDIR_END)
 		goto out;
 	else {
@@ -639,7 +646,8 @@ static int nova_readdir_fast(struct file *file, struct dir_context *ctx)
 	entryc = (metadata_csum == 0) ? entry : &entry_copy;
 	prev_entryc = (metadata_csum == 0) ? prev_entry : &prev_entry_copy;
 
-	while (curr_p != sih->log_tail) {
+//	while (curr_p != sih->log_tail) {
+	while (curr_p != sih->percpu_log_head[0].log_tail) {
 		if (goto_next_page(sb, curr_p))
 			curr_p = next_log_page(sb, curr_p);
 

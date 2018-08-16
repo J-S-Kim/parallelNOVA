@@ -584,8 +584,9 @@ static void nova_init_inode(struct inode *inode, struct nova_inode *pi)
 	pi->i_ctime = cpu_to_le32(inode->i_ctime.tv_sec);
 	pi->i_mtime = cpu_to_le32(inode->i_mtime.tv_sec);
 	pi->i_generation = cpu_to_le32(inode->i_generation);
-	pi->log_head = 0;
-	pi->log_tail = 0;
+	//pi->log_head = 0;
+	//pi->log_tail = 0;
+	pi->percpu_log_head = 0;
 	pi->alter_log_head = 0;
 	pi->alter_log_tail = 0;
 	pi->deleted = 0;
@@ -924,8 +925,9 @@ void nova_evict_inode(struct inode *inode)
 		nova_err(sb, "%s: inode %lu ino does not match: %llu\n",
 				__func__, inode->i_ino, pi->nova_ino);
 		nova_dbg("inode size %llu, pi addr 0x%lx, pi head 0x%llx, tail 0x%llx, mode %u\n",
-				inode->i_size, sih->pi_addr, sih->log_head,
-				sih->log_tail, pi->i_mode);
+				inode->i_size, sih->pi_addr, 0, 0,
+				//sih->log_head, sih->log_tail, 
+				pi->i_mode);
 		nova_dbg("sih: ino %lu, inode size %lu, mode %u, inode mode %u\n",
 				sih->ino, sih->i_size,
 				sih->i_mode, inode->i_mode);
@@ -1002,8 +1004,8 @@ int nova_delete_dead_inode(struct super_block *sb, u64 ino)
 	pi = (struct nova_inode *)nova_get_block(sb, pi_addr);
 	sih = &si.header;
 
-	nova_dbgv("Delete dead inode %lu, log head 0x%llx, tail 0x%llx\n",
-			sih->ino, sih->log_head, sih->log_tail);
+//	nova_dbgv("Delete dead inode %lu, log head 0x%llx, tail 0x%llx\n",
+//			sih->ino, sih->log_head, sih->log_tail);
 
 	return nova_free_inode_resource(sb, pi, sih);
 }

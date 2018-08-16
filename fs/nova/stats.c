@@ -356,6 +356,7 @@ void nova_clear_stats(struct super_block *sb)
 
 void nova_print_inode(struct nova_inode *pi)
 {
+/*
 	nova_dbg("%s: NOVA inode %llu\n", __func__, pi->nova_ino);
 	nova_dbg("valid %u, deleted %u, blk type %u, flags %u\n",
 		pi->valid, pi->deleted, pi->i_blk_type, pi->i_flags);
@@ -370,6 +371,7 @@ void nova_print_inode(struct nova_inode *pi)
 		pi->alter_log_tail);
 	nova_dbg("create epoch id %llu, delete epoch id %llu\n",
 		pi->create_epoch_id, pi->delete_epoch_id);
+*/
 }
 
 static inline void nova_print_file_write_entry(struct super_block *sb,
@@ -504,6 +506,7 @@ void nova_print_curr_log_page(struct super_block *sb, u64 curr)
 void nova_print_nova_log(struct super_block *sb,
 	struct nova_inode_info_header *sih)
 {
+/*
 	u64 curr;
 
 	if (sih->log_tail == 0 || sih->log_head == 0)
@@ -533,6 +536,7 @@ void nova_print_nova_log(struct super_block *sb,
 		if (curr == 0)
 			break;
 	}
+*/
 }
 
 void nova_print_inode_log(struct super_block *sb, struct inode *inode)
@@ -546,6 +550,7 @@ void nova_print_inode_log(struct super_block *sb, struct inode *inode)
 int nova_get_nova_log_pages(struct super_block *sb,
 	struct nova_inode_info_header *sih, struct nova_inode *pi)
 {
+/*
 	struct nova_inode_log_page *curr_page;
 	u64 curr, next;
 	int count = 1;
@@ -565,11 +570,13 @@ int nova_get_nova_log_pages(struct super_block *sb,
 	}
 
 	return count;
+*/
 }
 
 void nova_print_nova_log_pages(struct super_block *sb,
 	struct nova_inode_info_header *sih)
 {
+/*
 	struct nova_inode_log_page *curr_page;
 	u64 curr, next;
 	int count = 1;
@@ -601,6 +608,7 @@ void nova_print_nova_log_pages(struct super_block *sb,
 	nova_dbg("Pi %lu: log used %d pages, has %d pages, si reports %lu pages\n",
 		sih->ino, used, count,
 		sih->log_pages);
+*/
 }
 
 void nova_print_inode_log_pages(struct super_block *sb, struct inode *inode)
@@ -613,6 +621,7 @@ void nova_print_inode_log_pages(struct super_block *sb, struct inode *inode)
 
 int nova_check_inode_logs(struct super_block *sb, struct nova_inode *pi)
 {
+/*
 	int count1 = 0;
 	int count2 = 0;
 	int tail1_at = 0;
@@ -659,7 +668,7 @@ int nova_check_inode_logs(struct super_block *sb, struct nova_inode *pi)
 
 	nova_dbg("Log1 %d pages, tail @ page %d\n", count1, tail1_at);
 	nova_dbg("Log2 %d pages, tail @ page %d\n", count2, tail2_at);
-
+*/
 	return 0;
 }
 

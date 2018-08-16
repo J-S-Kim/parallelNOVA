@@ -119,6 +119,7 @@ static int nova_rebuild_inode_start(struct super_block *sb,
 	struct nova_inode *pi, struct nova_inode_info_header *sih,
 	struct nova_inode_rebuild *reb, u64 pi_addr)
 {
+/*
 	int ret;
 
 	ret = nova_get_head_tail(sb, pi, sih);
@@ -136,6 +137,8 @@ static int nova_rebuild_inode_start(struct super_block *sb,
 	sih->log_pages = 1;
 
 	return ret;
+*/
+	return 0;
 }
 
 static int nova_rebuild_inode_finish(struct super_block *sb,
@@ -385,6 +388,7 @@ static int nova_rebuild_file_inode_tree(struct super_block *sb,
 	struct nova_inode *pi, u64 pi_addr,
 	struct nova_inode_info_header *sih)
 {
+/*
 	struct nova_sb_info *sbi = NOVA_SB(sb);
 	struct nova_file_write_entry *entry = NULL;
 	struct nova_setattr_logentry *attr_entry = NULL;
@@ -454,7 +458,7 @@ static int nova_rebuild_file_inode_tree(struct super_block *sb,
 				reb->trans_id = attr_entry->trans_id;
 			}
 
-			/* Update sih->i_size for setattr operation */
+			// Update sih->i_size for setattr operation 
 			sih->i_size = le64_to_cpu(reb->i_size);
 			curr_p += sizeof(struct nova_setattr_logentry);
 			break;
@@ -494,6 +498,7 @@ out:
 //	nova_print_inode_log_page(sb, inode);
 	NOVA_END_TIMING(rebuild_file_t, rebuild_time);
 	return ret;
+*/
 }
 
 /******************* Directory rebuild *********************/
@@ -587,6 +592,7 @@ int nova_rebuild_dir_inode_tree(struct super_block *sb,
 	struct nova_inode *pi, u64 pi_addr,
 	struct nova_inode_info_header *sih)
 {
+/*
 	struct nova_sb_info *sbi = NOVA_SB(sb);
 	struct nova_dentry *entry = NULL;
 	struct nova_setattr_logentry *attr_entry = NULL;
@@ -683,12 +689,14 @@ out:
 //	nova_print_dir_tree(sb, sih, ino);
 	NOVA_END_TIMING(rebuild_dir_t, rebuild_time);
 	return ret;
+*/
 }
 
 /* initialize nova inode header and other DRAM data structures */
 int nova_rebuild_inode(struct super_block *sb, struct nova_inode_info *si,
 	u64 ino, u64 pi_addr, int rebuild_dir)
 {
+/*
 	struct nova_inode_info_header *sih = &si->header;
 	struct nova_inode *pi;
 	struct nova_inode inode_copy;
@@ -696,7 +704,7 @@ int nova_rebuild_inode(struct super_block *sb, struct nova_inode_info *si,
 	int ret;
 
 	if (metadata_csum) {
-		/* Get alternate inode address */
+		// Get alternate inode address 
 		ret = nova_get_alter_inode_address(sb, ino, &alter_pi_addr);
 		if (ret)  {
 			nova_dbg("%s: failed alt ino addr for inode %llu\n",
@@ -731,8 +739,8 @@ int nova_rebuild_inode(struct super_block *sb, struct nova_inode_info *si,
 
 	switch (__le16_to_cpu(pi->i_mode) & S_IFMT) {
 	case S_IFLNK:
-		/* Treat symlink files as normal files */
-		/* Fall through */
+		// Treat symlink files as normal files 
+		// Fall through 
 	case S_IFREG:
 		nova_rebuild_file_inode_tree(sb, pi, pi_addr, sih);
 		break;
@@ -741,7 +749,7 @@ int nova_rebuild_inode(struct super_block *sb, struct nova_inode_info *si,
 			nova_rebuild_dir_inode_tree(sb, pi, pi_addr, sih);
 		break;
 	default:
-		/* In case of special inode, walk the log */
+		// In case of special inode, walk the log 
 		if (pi->log_head)
 			nova_rebuild_file_inode_tree(sb, pi, pi_addr, sih);
 		sih->pi_addr = pi_addr;
@@ -749,6 +757,7 @@ int nova_rebuild_inode(struct super_block *sb, struct nova_inode_info *si,
 	}
 
 	return 0;
+*/
 }
 
 
@@ -757,6 +766,7 @@ int nova_rebuild_inode(struct super_block *sb, struct nova_inode_info *si,
 /* For power failure recovery, just initialize the infos */
 int nova_restore_snapshot_table(struct super_block *sb, int just_init)
 {
+/*
 	struct nova_sb_info *sbi = NOVA_SB(sb);
 	struct nova_snapshot_info_entry *entry = NULL;
 	struct nova_inode *pi;
@@ -846,4 +856,5 @@ out:
 			count, sbi->s_epoch_id);
 
 	return ret;
+*/
 }

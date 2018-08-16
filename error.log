@@ -1,0 +1,208 @@
+
+In file included from fs/nova/nova.h:377:0,
+                 from fs/nova/balloc.c:28:
+fs/nova/inode.h: In function ‘nova_update_tail’:
+fs/nova/inode.h:229:13: warning: assignment makes pointer from integer without a cast [enabled by default]
+  percpu_log = pi->percpu_log_head + cpuid * sizeof(struct percpu_log_head);
+             ^
+In file included from fs/nova/balloc.c:28:0:
+fs/nova/nova.h: In function ‘nova_get_head_tail’:
+fs/nova/nova.h:389:28: error: incompatible types when assigning to type ‘struct percpu_log_head’ from type ‘long long unsigned int’
+  sih->percpu_log_head[cpu] = fake_pi.percpu_log_head + cpu * sizeof(struct percpu_log_head);
+                            ^
+In file included from fs/nova/nova.h:377:0,
+                 from fs/nova/bbuild.c:31:
+fs/nova/inode.h: In function ‘nova_update_tail’:
+fs/nova/inode.h:229:13: warning: assignment makes pointer from integer without a cast [enabled by default]
+  percpu_log = pi->percpu_log_head + cpuid * sizeof(struct percpu_log_head);
+             ^
+In file included from fs/nova/bbuild.c:31:0:
+fs/nova/nova.h: In function ‘nova_get_head_tail’:
+fs/nova/nova.h:389:28: error: incompatible types when assigning to type ‘struct percpu_log_head’ from type ‘long long unsigned int’
+  sih->percpu_log_head[cpu] = fake_pi.percpu_log_head + cpu * sizeof(struct percpu_log_head);
+                            ^
+fs/nova/bbuild.c: In function ‘nova_init_blockmap_from_inode’:
+fs/nova/bbuild.c:231:14: error: ‘struct nova_inode_info_header’ has no member named ‘log_head’
+  curr_p = sih.log_head;
+              ^
+fs/nova/bbuild.c:237:22: error: ‘struct nova_inode_info_header’ has no member named ‘log_tail’
+  while (curr_p != sih.log_tail) {
+                      ^
+fs/nova/bbuild.c: In function ‘nova_init_inode_list_from_inode’:
+fs/nova/bbuild.c:312:2: error: too few arguments to function ‘nova_get_head_tail’
+  ret = nova_get_head_tail(sb, pi, &sih);
+  ^
+In file included from fs/nova/bbuild.c:31:0:
+fs/nova/nova.h:378:19: note: declared here
+ static inline int nova_get_head_tail(struct super_block *sb,
+                   ^
+fs/nova/bbuild.c:318:14: error: ‘struct nova_inode_info_header’ has no member named ‘log_head’
+  curr_p = sih.log_head;
+              ^
+fs/nova/bbuild.c:324:22: error: ‘struct nova_inode_info_header’ has no member named ‘log_tail’
+  while (curr_p != sih.log_tail) {
+                      ^
+fs/nova/bbuild.c: In function ‘nova_save_inode_list_to_log’:
+fs/nova/bbuild.c:492:4: error: ‘struct nova_inode’ has no member named ‘log_head’
+  pi->log_head = new_block;
+    ^
+fs/nova/bbuild.c:493:2: error: too few arguments to function ‘nova_update_tail’
+  nova_update_tail(pi, temp_tail);
+  ^
+In file included from fs/nova/nova.h:377:0,
+                 from fs/nova/bbuild.c:31:
+fs/nova/inode.h:219:20: note: declared here
+ static inline void nova_update_tail(struct nova_inode *pi, u64 new_tail, int cpuid)
+                    ^
+fs/nova/bbuild.c:494:23: error: ‘struct nova_inode’ has no member named ‘log_head’
+  nova_flush_buffer(&pi->log_head, CACHELINE_SIZE, 0);
+                       ^
+In file included from ./include/linux/kernel.h:13:0,
+                 from ./include/linux/list.h:8,
+                 from ./include/linux/wait.h:6,
+                 from ./include/linux/wait_bit.h:7,
+                 from ./include/linux/fs.h:5,
+                 from fs/nova/bbuild.c:26:
+fs/nova/bbuild.c:498:26: error: ‘struct nova_inode’ has no member named ‘log_head’
+   __func__, num_nodes, pi->log_head, pi->log_tail);
+                          ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/bbuild.c:497:2: note: in expansion of macro ‘nova_dbg’
+  nova_dbg("%s: %lu inode nodes, pi head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c:498:40: error: ‘struct nova_inode’ has no member named ‘log_tail’
+   __func__, num_nodes, pi->log_head, pi->log_tail);
+                                        ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/bbuild.c:497:2: note: in expansion of macro ‘nova_dbg’
+  nova_dbg("%s: %lu inode nodes, pi head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c: In function ‘nova_save_blocknode_mappings_to_log’:
+fs/nova/bbuild.c:543:4: error: ‘struct nova_inode’ has no member named ‘log_head’
+  pi->log_head = new_block;
+    ^
+fs/nova/bbuild.c:544:2: error: too few arguments to function ‘nova_update_tail’
+  nova_update_tail(pi, temp_tail);
+  ^
+In file included from fs/nova/nova.h:377:0,
+                 from fs/nova/bbuild.c:31:
+fs/nova/inode.h:219:20: note: declared here
+ static inline void nova_update_tail(struct nova_inode *pi, u64 new_tail, int cpuid)
+                    ^
+fs/nova/bbuild.c:545:23: error: ‘struct nova_inode’ has no member named ‘log_head’
+  nova_flush_buffer(&pi->log_head, CACHELINE_SIZE, 0);
+                       ^
+In file included from ./include/linux/kernel.h:13:0,
+                 from ./include/linux/list.h:8,
+                 from ./include/linux/wait.h:6,
+                 from ./include/linux/wait_bit.h:7,
+                 from ./include/linux/fs.h:5,
+                 from fs/nova/bbuild.c:26:
+fs/nova/bbuild.c:550:7: error: ‘struct nova_inode’ has no member named ‘log_head’
+     pi->log_head, pi->log_tail);
+       ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/bbuild.c:548:2: note: in expansion of macro ‘nova_dbg’
+  nova_dbg("%s: %lu blocknodes, %lu log pages, pi head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c:550:21: error: ‘struct nova_inode’ has no member named ‘log_tail’
+     pi->log_head, pi->log_tail);
+                     ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/bbuild.c:548:2: note: in expansion of macro ‘nova_dbg’
+  nova_dbg("%s: %lu blocknodes, %lu log pages, pi head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c: In function ‘nova_traverse_dir_inode_log’:
+fs/nova/bbuild.c:824:40: error: ‘struct nova_inode’ has no member named ‘log_head’
+  nova_traverse_inode_log(sb, pi, bm, pi->log_head);
+                                        ^
+fs/nova/bbuild.c: In function ‘nova_traverse_file_inode_log’:
+fs/nova/bbuild.c:1062:13: error: ‘struct nova_inode’ has no member named ‘log_head’
+  curr_p = pi->log_head;
+             ^
+In file included from ./include/linux/kernel.h:13:0,
+                 from ./include/linux/list.h:8,
+                 from ./include/linux/wait.h:6,
+                 from ./include/linux/wait_bit.h:7,
+                 from ./include/linux/fs.h:5,
+                 from fs/nova/bbuild.c:26:
+fs/nova/bbuild.c:1064:15: error: ‘struct nova_inode’ has no member named ‘log_tail’
+     curr_p, pi->log_tail);
+               ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/nova.h:91:43: note: in expansion of macro ‘nova_dbg’
+  ((nova_dbgmask & NOVA_DBGMASK_VERBOSE) ? nova_dbg(s, ##args) : 0)
+                                           ^
+fs/nova/bbuild.c:1063:2: note: in expansion of macro ‘nova_dbg_verbose’
+  nova_dbg_verbose("Log head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c:1065:23: error: ‘struct nova_inode’ has no member named ‘log_tail’
+  if (curr_p == 0 && pi->log_tail == 0)
+                       ^
+fs/nova/bbuild.c:1073:21: error: ‘struct nova_inode’ has no member named ‘log_tail’
+  while (curr_p != pi->log_tail) {
+                     ^
+In file included from ./include/linux/kernel.h:13:0,
+                 from ./include/linux/list.h:8,
+                 from ./include/linux/wait.h:6,
+                 from ./include/linux/wait_bit.h:7,
+                 from ./include/linux/fs.h:5,
+                 from fs/nova/bbuild.c:26:
+fs/nova/bbuild.c: In function ‘nova_recover_inode_pages’:
+fs/nova/bbuild.c:1162:26: error: ‘struct nova_inode’ has no member named ‘log_head’
+    __func__, nova_ino, pi->log_head, pi->log_tail);
+                          ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/nova.h:91:43: note: in expansion of macro ‘nova_dbg’
+  ((nova_dbgmask & NOVA_DBGMASK_VERBOSE) ? nova_dbg(s, ##args) : 0)
+                                           ^
+fs/nova/nova.h:92:32: note: in expansion of macro ‘nova_dbg_verbose’
+ #define nova_dbgv(s, args ...) nova_dbg_verbose(s, ##args)
+                                ^
+fs/nova/bbuild.c:1161:2: note: in expansion of macro ‘nova_dbgv’
+  nova_dbgv("%s: inode %lu, head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c:1162:40: error: ‘struct nova_inode’ has no member named ‘log_tail’
+    __func__, nova_ino, pi->log_head, pi->log_tail);
+                                        ^
+./include/linux/printk.h:308:34: note: in definition of macro ‘pr_info’
+  printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+                                  ^
+fs/nova/nova.h:91:43: note: in expansion of macro ‘nova_dbg’
+  ((nova_dbgmask & NOVA_DBGMASK_VERBOSE) ? nova_dbg(s, ##args) : 0)
+                                           ^
+fs/nova/nova.h:92:32: note: in expansion of macro ‘nova_dbg_verbose’
+ #define nova_dbgv(s, args ...) nova_dbg_verbose(s, ##args)
+                                ^
+fs/nova/bbuild.c:1161:2: note: in expansion of macro ‘nova_dbgv’
+  nova_dbgv("%s: inode %lu, head 0x%llx, tail 0x%llx\n",
+  ^
+fs/nova/bbuild.c: In function ‘nova_failure_recovery’:
+fs/nova/bbuild.c:1468:4: error: ‘struct nova_inode’ has no member named ‘log_head’
+  pi->log_head = pi->log_tail = 0;
+    ^
+fs/nova/bbuild.c:1468:19: error: ‘struct nova_inode’ has no member named ‘log_tail’
+  pi->log_head = pi->log_tail = 0;
+                   ^
+fs/nova/bbuild.c:1469:23: error: ‘struct nova_inode’ has no member named ‘log_head’
+  nova_flush_buffer(&pi->log_head, CACHELINE_SIZE, 0);
+                       ^
+fs/nova/bbuild.c: In function ‘nova_try_normal_recovery’:
+fs/nova/bbuild.c:1513:8: error: ‘struct nova_inode’ has no member named ‘log_head’
+  if (pi->log_head == 0 || pi->log_tail == 0)
+        ^
+fs/nova/bbuild.c:1513:29: error: ‘struct nova_inode’ has no member named ‘log_tail’
+  if (pi->log_head == 0 || pi->log_tail == 0)
+

@@ -162,6 +162,7 @@ extern unsigned int blk_type_to_size[NOVA_BLOCK_TYPE_MAX];
 #define	MMAP_ADDR(p)	((p) & (PAGE_MASK))
 
 
+
 /* Mask out flags that are inappropriate for the given type of inode. */
 static inline __le32 nova_mask_flags(umode_t mode, __le32 flags)
 {
@@ -376,22 +377,29 @@ static inline void nova_print_curr_epoch_id(struct super_block *sb)
 
 #include "inode.h"
 static inline int nova_get_head_tail(struct super_block *sb,
-	struct nova_inode *pi, struct nova_inode_info_header *sih)
+	struct nova_inode *pi, struct nova_inode_info_header *sih, int cpu)
 {
 	struct nova_inode fake_pi;
 	int rc;
+	void *addr;
 
 	rc = memcpy_mcsafe(&fake_pi, pi, sizeof(struct nova_inode));
 	if (rc)
 		return rc;
 
 	sih->i_blk_type = fake_pi.i_blk_type;
-	sih->log_head = fake_pi.log_head;
-	sih->log_tail = fake_pi.log_tail;
-	sih->alter_log_head = fake_pi.alter_log_head;
-	sih->alter_log_tail = fake_pi.alter_log_tail;
+	addr = (void *)fake_pi.percpu_log_head + cpu * sizeof(struct percpu_log_head);
+	sih->percpu_log_head[cpu] = *(struct percpu_log_head *)addr;
 
 	return rc;
+}
+
+/* percpu log  */
+static inline u64 percpu_log_head(struct nova_inode *pi, int cpuid)
+{
+	void *addr = (void *)(pi->percpu_log_head + cpuid * sizeof(struct percpu_log_head));
+	struct percpu_log_head *percpu_pi_log_head = (struct percpu_log_head *)addr;
+	return (u64)percpu_pi_log_head;
 }
 
 struct nova_range_node_lowhigh {
@@ -1151,5 +1159,6 @@ void nova_enable_measure_timing(void);
 /* perf.c */
 int nova_test_perf(struct super_block *sb, unsigned int func_id,
 	unsigned int poolmb, size_t size, unsigned int disks);
+
 
 #endif /* __NOVA_H */

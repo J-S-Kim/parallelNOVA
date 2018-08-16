@@ -552,6 +552,7 @@ out:
 ssize_t do_nova_inplace_file_write(struct file *filp,
 	const char __user *buf,	size_t len, loff_t *ppos)
 {
+/*
 	struct address_space *mapping = filp->f_mapping;
 	struct inode	*inode = mapping->host;
 	struct nova_inode_info *si = NOVA_I(inode);
@@ -606,10 +607,11 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 	count = len;
 
 	pi = nova_get_block(sb, sih->pi_addr);
-
+*/
 	/* nova_inode tail pointer will be updated and we make sure all other
 	 * inode fields are good before checksumming the whole structure
 	 */
+/*
 	if (nova_check_inode_integrity(sb, sih->ino, sih->pi_addr,
 			sih->alter_pi_addr, &inode_copy, 0) < 0) {
 		ret = -EIO;
@@ -619,9 +621,9 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 	offset = pos & (sb->s_blocksize - 1);
 	num_blocks = ((count + offset - 1) >> sb->s_blocksize_bits) + 1;
 	total_blocks = num_blocks;
-
+*/
 	/* offset in the actual block size block */
-
+/*
 	ret = file_remove_privs(filp);
 	if (ret)
 		goto out;
@@ -646,15 +648,14 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 
 		entryc = (metadata_csum == 0) ? entry : &entry_copy;
 
+
 		if (entry && inplace) {
-			/* We can do inplace write. Find contiguous blocks */
 			blocknr = get_nvmm(sb, sih, entryc, start_blk);
 			blk_off = blocknr << PAGE_SHIFT;
 			allocated = ent_blks;
 			if (data_csum || data_parity)
 				nova_set_write_entry_updating(sb, entry, 1);
 		} else {
-			/* Allocate blocks to fill hole */
 			allocated = nova_new_data_blocks(sb, sih, &blocknr,
 					 start_blk, ent_blks, ALLOC_NO_INIT,
 					 ANY_CPU, ALLOC_FROM_HEAD);
@@ -691,7 +692,6 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 
 		}
 
-		/* Now copy from user buf */
 //		nova_dbg("Write: %p\n", kmem);
 		NOVA_START_TIMING(memcpy_w_nvmm_t, memcpy_time);
 		nova_memunlock_range(sb, kmem + offset, bytes);
@@ -712,7 +712,6 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 		else
 			file_size = cpu_to_le64(inode->i_size);
 
-		/* Handle hole fill write */
 		if (hole_fill) {
 			nova_init_file_write_entry(sb, sih, &entry_data,
 						epoch_id, start_blk, allocated,
@@ -727,7 +726,6 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 				goto out;
 			}
 		} else {
-			/* Update existing entry */
 			struct nova_log_entry_info entry_info;
 
 			entry_info.type = FILE_WRITE;
@@ -777,7 +775,6 @@ ssize_t do_nova_inplace_file_write(struct file *filp,
 		nova_memlock_inode(sb, pi);
 		NOVA_STATS_ADD(inplace_new_blocks, 1);
 
-		/* Update file tree */
 		ret = nova_reassign_file_tree(sb, sih, begin_tail);
 		if (ret)
 			goto out;
@@ -802,6 +799,7 @@ out:
 	NOVA_END_TIMING(inplace_write_t, inplace_write_time);
 	NOVA_STATS_ADD(inplace_write_bytes, written);
 	return ret;
+*/
 }
 
 /* 
@@ -871,6 +869,7 @@ static int nova_dax_get_blocks(struct inode *inode, sector_t iblock,
 	unsigned long max_blocks, u32 *bno, bool *new, bool *boundary,
 	int create, bool taking_lock)
 {
+/*
 	struct super_block *sb = inode->i_sb;
 	struct nova_inode *pi;
 	struct nova_inode_info *si = NOVA_I(inode);
@@ -930,7 +929,7 @@ again:
 	if (taking_lock && locked == 0) {
 		inode_lock(inode);
 		locked = 1;
-		/* Check again incase someone has done it for us */
+		// Check again incase someone has done it for us 
 		check_next = 1;
 		goto again;
 	}
@@ -941,7 +940,7 @@ again:
 	update.tail = sih->log_tail;
 	update.alter_tail = sih->alter_log_tail;
 
-	/* Return initialized blocks to the user */
+	// Return initialized blocks to the user 
 	allocated = nova_new_data_blocks(sb, sih, &blocknr, iblock,
 				 num_blocks, ALLOC_INIT_ZERO, ANY_CPU,
 				 ALLOC_FROM_HEAD);
@@ -953,7 +952,6 @@ again:
 	}
 
 	num_blocks = allocated;
-	/* Do not extend file size */
 	nova_init_file_write_entry(sb, sih, &entry_data,
 					epoch_id, iblock, num_blocks,
 					blocknr, time, inode->i_size);
@@ -1003,8 +1001,8 @@ out1:
 
 	NOVA_END_TIMING(dax_get_block_t, get_block_time);
 	return num_blocks;
+*/
 }
-
 int nova_iomap_begin(struct inode *inode, loff_t offset, loff_t length,
 	unsigned int flags, struct iomap *iomap, bool taking_lock)
 {
@@ -1135,6 +1133,7 @@ static inline int nova_rbtree_compare_vma(struct vma_item *curr,
 static int nova_append_write_mmap_to_log(struct super_block *sb,
 	struct inode *inode, struct vma_item *item)
 {
+/*
 	struct vm_area_struct *vma = item->vma;
 	struct nova_inode *pi;
 	struct nova_mmap_entry data;
@@ -1143,7 +1142,7 @@ static int nova_append_write_mmap_to_log(struct super_block *sb,
 	u64 epoch_id;
 	int ret;
 
-	/* Only for csum and parity update */
+	// Only for csum and parity update 
 	if (data_csum == 0 && data_parity == 0)
 		return 0;
 
@@ -1174,6 +1173,7 @@ static int nova_append_write_mmap_to_log(struct super_block *sb,
 	nova_memlock_inode(sb, pi);
 out:
 	return ret;
+*/
 }
 
 int nova_insert_write_vma(struct vm_area_struct *vma)

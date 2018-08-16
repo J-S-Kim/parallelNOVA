@@ -112,6 +112,7 @@ static inline void nova_set_next_link_page_address(struct super_block *sb,
 static int nova_delete_snapshot_list_entries(struct super_block *sb,
 	struct snapshot_list *list)
 {
+/*
 	struct snapshot_file_write_entry *w_entry = NULL;
 	struct snapshot_inode_entry *i_entry = NULL;
 	struct nova_inode_info_header sih;
@@ -166,7 +167,7 @@ static int nova_delete_snapshot_list_entries(struct super_block *sb,
 			continue;
 		}
 	}
-
+*/
 	return 0;
 }
 
@@ -197,6 +198,7 @@ static inline int nova_background_clean_write_entry(struct super_block *sb,
 static int nova_background_clean_snapshot_list(struct super_block *sb,
 	struct snapshot_list *list, u64 epoch_id)
 {
+/*
 	struct nova_inode_log_page *curr_page;
 	struct nova_inode_info_header sih;
 	void *addr;
@@ -251,7 +253,7 @@ static int nova_background_clean_snapshot_list(struct super_block *sb,
 			continue;
 		}
 	}
-
+*/
 	return 0;
 }
 
@@ -789,6 +791,7 @@ int nova_mount_snapshot(struct super_block *sb)
 static int nova_free_nvmm_page(struct super_block *sb,
 	u64 nvmm_page_addr)
 {
+/*
 	struct nova_sb_info *sbi = NOVA_SB(sb);
 	struct snapshot_nvmm_page *nvmm_page;
 	struct snapshot_nvmm_list *nvmm_list;
@@ -815,6 +818,7 @@ static int nova_free_nvmm_page(struct super_block *sb,
 
 	nvmm_blocknr = nova_get_blocknr(sb, nvmm_page_addr, 0);
 	nova_free_log_blocks(sb, &sih, nvmm_blocknr, 1);
+*/
 	return 0;
 }
 
@@ -877,6 +881,7 @@ out:
 static int nova_append_snapshot_info_log(struct super_block *sb,
 	struct snapshot_info *info, u64 epoch_id, u64 timestamp)
 {
+/*
 	struct nova_sb_info *sbi = NOVA_SB(sb);
 	struct nova_inode_info *si = sbi->snapshot_si;
 	struct nova_inode *pi = nova_get_reserved_inode(sb, NOVA_SNAPSHOT_INO);
@@ -901,7 +906,7 @@ static int nova_append_snapshot_info_log(struct super_block *sb,
 	nova_memunlock_inode(sb, pi);
 	nova_update_inode(sb, &si->vfs_inode, pi, &update, 1);
 	nova_memlock_inode(sb, pi);
-
+*/
 	return 0;
 }
 

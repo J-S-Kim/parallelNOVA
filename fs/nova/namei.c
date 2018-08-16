@@ -19,7 +19,7 @@
 #include "nova.h"
 #include "journal.h"
 #include "inode.h"
-
+#include "balloc.h"
 static ino_t nova_inode_by_name(struct inode *dir, struct qstr *entry,
 				 struct nova_dentry **res_entry)
 {
@@ -96,7 +96,7 @@ static void nova_lite_transaction_for_new_inode(struct super_block *sb,
 	// update this functions so the changes will be roll back on failure.
 	journal_tail = nova_create_inode_transaction(sb, inode, dir, cpu, 1, 0);
 
-	nova_update_inode(sb, dir, pidir, update, 0);
+	nova_update_inode(sb, dir, pidir, update, 0, cpu);
 
 	pi->valid = 1;
 	nova_update_inode_checksum(pi);
@@ -137,6 +137,8 @@ static int nova_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	timing_t create_time;
 	unsigned long blocknr = 0;
 	int allocated=0; 
+	struct nova_inode_info_header *sih;
+	sih->i_blk_type=0;	
 
 	NOVA_START_TIMING(create_t, create_time);
 
@@ -169,7 +171,8 @@ static int nova_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 	/*
 	 * for per cpu log
 	 */
-	allocated = nova_new_blocks(sb, &blocknr, 1, 0, ALLOC_NO_INIT, PER_CPU, ANY_CPU, ALLOC_FROM_HEAD);
+	//allocated = nova_new_blocks(sb, &blocknr, 1, 0, ALLOC_NO_INIT, PER_CPU, ANY_CPU, ALLOC_FROM_HEAD);
+	allocated = nova_new_data_blocks(sb, sih, &blocknr, 0, 1, ALLOC_NO_INIT, ANY_CPU, ALLOC_FROM_HEAD);
 	pi->percpu_log_head = nova_get_block_off(sb, blocknr, 0);
 
 
@@ -330,9 +333,9 @@ static void nova_lite_transaction_for_time_and_link(struct super_block *sb,
 		pi->valid = 0;
 		pi->delete_epoch_id = epoch_id;
 	}
-	nova_update_inode(sb, inode, pi, update, 0);
+	nova_update_inode(sb, inode, pi, update, 0, cpu);
 
-	nova_update_inode(sb, dir, pidir, update_dir, 0);
+	nova_update_inode(sb, dir, pidir, update_dir, 0, cpu);
 
 	PERSISTENT_BARRIER();
 
@@ -682,6 +685,7 @@ static int nova_rename(struct inode *old_dir,
 	int err = -ENOENT;
 	int inc_link = 0, dec_link = 0;
 	int cpu;
+	int cpuid;
 	int change_parent = 0;
 	u64 journal_tail;
 	u64 epoch_id;
@@ -693,6 +697,7 @@ static int nova_rename(struct inode *old_dir,
 			__func__, S_ISDIR(old_inode->i_mode) ? "dir" : "normal",
 			old_inode->i_ino, old_dir->i_ino, new_dir->i_ino,
 			new_inode ? new_inode->i_ino : 0);
+	cpuid = nova_get_cpuid(sb);
 
 	if (flags & ~RENAME_NOREPLACE)
 		return -EINVAL;
@@ -745,7 +750,7 @@ static int nova_rename(struct inode *old_dir,
 		/* My father is changed. Update .. entry */
 		/* For simplicity, we use in-place update and journal it */
 		change_parent = 1;
-		head_addr = (char *)nova_get_block(sb, old_pi->log_head);
+		head_addr = (char *)nova_get_block(sb, percpu_log_head(old_pi, cpuid));
 		father_entry = (struct nova_dentry *)(head_addr +
 					NOVA_DIR_LOG_REC_LEN(1));
 
@@ -833,11 +838,11 @@ static int nova_rename(struct inode *old_dir,
 				invalidate_new_inode,
 				cpu);
 
-	nova_update_inode(sb, old_inode, old_pi, &update_old, 0);
-	nova_update_inode(sb, old_dir, old_pidir, &update_dir_old, 0);
+	nova_update_inode(sb, old_inode, old_pi, &update_old, 0, cpu);
+	nova_update_inode(sb, old_dir, old_pidir, &update_dir_old, 0, cpu);
 
 	if (old_pidir != new_pidir)
-		nova_update_inode(sb, new_dir, new_pidir, &update_dir_new, 0);
+		nova_update_inode(sb, new_dir, new_pidir, &update_dir_new, 0, cpu);
 
 	if (change_parent && father_entry) {
 		father_entry->ino = cpu_to_le64(new_dir->i_ino);
@@ -850,7 +855,7 @@ static int nova_rename(struct inode *old_dir,
 			new_pi->valid = 0;
 			new_pi->delete_epoch_id = epoch_id;
 		}
-		nova_update_inode(sb, new_inode, new_pi, &update_new, 0);
+		nova_update_inode(sb, new_inode, new_pi, &update_new, 0, cpu);
 	}
 
 	PERSISTENT_BARRIER();

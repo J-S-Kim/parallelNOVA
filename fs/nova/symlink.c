@@ -27,6 +27,7 @@
 int nova_block_symlink(struct super_block *sb, struct nova_inode *pi,
 	struct inode *inode, const char *symname, int len, u64 epoch_id)
 {
+/*
 	struct nova_file_write_entry entry_data;
 	struct nova_inode_info *si = NOVA_I(inode);
 	struct nova_inode_info_header *sih = &si->header;
@@ -48,7 +49,7 @@ int nova_block_symlink(struct super_block *sb, struct nova_inode *pi,
 		return ret;
 	}
 
-	/* First copy name to name block */
+	// First copy name to name block 
 	block = nova_get_block_off(sb, name_blocknr, NOVA_BLOCK_TYPE_4K);
 	blockp = (char *)nova_get_block(sb, block);
 
@@ -57,7 +58,7 @@ int nova_block_symlink(struct super_block *sb, struct nova_inode *pi,
 	blockp[len] = '\0';
 	nova_memlock_block(sb, blockp);
 
-	/* Apply a write entry to the log page */
+	// Apply a write entry to the log page 
 	time = current_time(inode).tv_sec;
 	nova_init_file_write_entry(sb, sih, &entry_data, epoch_id, 0, 1,
 					name_blocknr, time, len + 1);
@@ -76,6 +77,7 @@ int nova_block_symlink(struct super_block *sb, struct nova_inode *pi,
 	sih->trans_id++;
 
 	return 0;
+*/
 }
 
 /* FIXME: Temporary workaround */
@@ -97,6 +99,7 @@ out:
 
 static int nova_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 {
+/*
 	struct nova_file_write_entry *entry;
 	struct nova_file_write_entry *entryc, entry_copy;
 	struct inode *inode = dentry->d_inode;
@@ -119,11 +122,13 @@ static int nova_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 	blockp = (char *)nova_get_block(sb, BLOCK_OFF(entryc->block));
 
 	return nova_readlink_copy(buffer, buflen, blockp);
+*/
 }
 
 static const char *nova_get_link(struct dentry *dentry, struct inode *inode,
 	struct delayed_call *done)
 {
+/*
 	struct nova_file_write_entry *entry;
 	struct nova_file_write_entry *entryc, entry_copy;
 	struct super_block *sb = inode->i_sb;
@@ -144,6 +149,7 @@ static const char *nova_get_link(struct dentry *dentry, struct inode *inode,
 	blockp = (char *)nova_get_block(sb, BLOCK_OFF(entryc->block));
 
 	return blockp;
+*/
 }
 
 const struct inode_operations nova_symlink_inode_operations = {

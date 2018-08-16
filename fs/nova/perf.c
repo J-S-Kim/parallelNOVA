@@ -318,8 +318,11 @@ static void *nova_alloc_pmem_pool(struct super_block *sb,
 
 	sih->ino = NOVA_TEST_PERF_INO;
 	sih->i_blk_type = blocktype;
-	sih->log_head = 0;
-	sih->log_tail = 0;
+	//sih->log_head = 0;
+	//sih->log_tail = 0;
+	sih->percpu_log_head[cpu].log_head=0;
+	sih->percpu_log_head[cpu].log_tail=0;
+
 
 	*allocated = nova_new_data_blocks(sb, sih, blocknr, 0, num,
 					  ALLOC_NO_INIT, cpu, ALLOC_FROM_HEAD);

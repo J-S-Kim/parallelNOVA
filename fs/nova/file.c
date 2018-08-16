@@ -196,7 +196,7 @@ static long nova_fallocate(struct file *file, int mode, loff_t offset,
 	u64 begin_tail = 0;
 	u64 epoch_id;
 	u32 time;
-
+	int cpuid = nova_get_cpuid(sb);
 	/*
 	 * Fallocate does not make much sence for CoW,
 	 * but we still support it for DAX-mmap purpose.
@@ -239,8 +239,13 @@ static long nova_fallocate(struct file *file, int mode, loff_t offset,
 	num_blocks = (blockoff + len + blocksize_mask) >> sb->s_blocksize_bits;
 
 	epoch_id = nova_get_epoch_id(sb);
-	update.tail = sih->log_tail;
-	update.alter_tail = sih->alter_log_tail;
+
+	update.tail = sih->percpu_log_head[cpuid].log_tail;
+	//TODO : implementation alter_tail
+	//update.alter_tail = sih->percpu_log_head[cpuid].alter_log_tail;
+	update.alter_tail = sih->percpu_log_head[cpuid].log_tail;
+	//update.tail = sih->log_tail;
+	//update.alter_tail = sih->alter_log_tail;
 	while (num_blocks > 0) {
 		ent_blks = nova_check_existing_entry(sb, inode, num_blocks,
 						start_blk, &entry, &entry_copy,
@@ -308,11 +313,13 @@ next:
 	inode->i_blocks = sih->i_blocks;
 
 	if (update_log) {
-		sih->log_tail = update.tail;
-		sih->alter_log_tail = update.alter_tail;
+		//sih->log_tail = update.tail;
+		//sih->alter_log_tail = update.alter_tail;
+		sih->percpu_log_head[cpuid].log_tail = update.tail;
+		//sih->alter_log_tail = update.alter_tail;
 
 		nova_memunlock_inode(sb, pi);
-		nova_update_tail(pi, update.tail);
+		nova_update_tail(pi, update.tail, 0);
 		if (metadata_csum)
 			nova_update_alter_tail(pi, update.alter_tail);
 		nova_memlock_inode(sb, pi);
@@ -821,7 +828,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	sih->i_blocks += (total_blocks << (data_bits - sb->s_blocksize_bits));
 
 	nova_memunlock_inode(sb, pi);
-	nova_update_inode_parallel(sb, inode, pi, &update, 1, cpuid);
+	nova_update_inode(sb, inode, pi, &update, 1, cpuid);
     inode_unlock(inode);
 	nova_memlock_inode(sb, pi);
 

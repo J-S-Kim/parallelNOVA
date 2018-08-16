@@ -235,7 +235,7 @@ static u64 nova_append_entry_journal(struct super_block *sb,
 static u64 nova_journal_inode_tail(struct super_block *sb,
 	u64 curr_p, struct nova_inode *pi)
 {
-	curr_p = nova_append_entry_journal(sb, curr_p, &pi->log_tail);
+	//curr_p = nova_append_entry_journal(sb, curr_p, &pi->log_tail);
 	if (metadata_csum)
 		curr_p = nova_append_entry_journal(sb, curr_p,
 						&pi->alter_log_tail);

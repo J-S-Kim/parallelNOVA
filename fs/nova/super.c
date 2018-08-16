@@ -395,6 +395,7 @@ static struct nova_inode *nova_init(struct super_block *sb,
 	struct nova_inode_update update;
 	u64 epoch_id;
 	timing_t init_time;
+	int cpuid = nova_get_cpuid(sb);
 
 	NOVA_START_TIMING(new_init_t, init_time);
 	nova_info("creating an empty nova of size %lu\n", size);
@@ -426,7 +427,7 @@ static struct nova_inode *nova_init(struct super_block *sb,
 	nova_flush_buffer(pi, CACHELINE_SIZE, 1);
 
 	memset(&update, 0, sizeof(struct nova_inode_update));
-	nova_update_inode(sb, &sbi->snapshot_si->vfs_inode, pi, &update, 1);
+	nova_update_inode(sb, &sbi->snapshot_si->vfs_inode, pi, &update, 1, cpuid);
 
 	nova_memlock_reserved(sb, super);
 

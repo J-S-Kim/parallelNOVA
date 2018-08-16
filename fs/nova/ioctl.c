@@ -87,7 +87,7 @@ long nova_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 					&update, &old_linkc, epoch_id);
 		if (!ret) {
 			nova_memunlock_inode(sb, pi);
-			nova_update_inode(sb, inode, pi, &update, 1);
+			nova_update_inode(sb, inode, pi, &update, 1 ,0);
 			nova_memlock_inode(sb, pi);
 			nova_invalidate_link_change_entry(sb, old_linkc);
 		}
@@ -126,7 +126,7 @@ flags_out:
 					&update, &old_linkc, epoch_id);
 		if (!ret) {
 			nova_memunlock_inode(sb, pi);
-			nova_update_inode(sb, inode, pi, &update, 1);
+			nova_update_inode(sb, inode, pi, &update, 1, 0);
 			nova_memlock_inode(sb, pi);
 			nova_invalidate_link_change_entry(sb, old_linkc);
 		}

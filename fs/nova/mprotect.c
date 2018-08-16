@@ -212,10 +212,11 @@ static int nova_dax_cow_mmap_handler(struct super_block *sb,
 	size_t entry_size = sizeof(struct nova_file_write_entry);
 	int ret = 0;
 	timing_t update_time;
+	int cpuid = nova_get_cpuid(sb);
 
 	NOVA_START_TIMING(mmap_handler_t, update_time);
 	entryc = (metadata_csum == 0) ? entry : &entry_copy;
-	while (curr_p && curr_p != sih->log_tail) {
+	while (curr_p && curr_p != sih->percpu_log_head[cpuid].log_tail) {
 		if (is_last_entry(curr_p, entry_size))
 			curr_p = next_log_page(sb, curr_p);
 
@@ -315,6 +316,7 @@ int nova_mmap_to_new_blocks(struct vm_area_struct *vma,
 	u32 time;
 	timing_t mmap_cow_time;
 	int ret = 0;
+	int cpuid = nova_get_cpuid(sb);
 
 	NOVA_START_TIMING(mmap_cow_t, mmap_cow_time);
 
@@ -343,7 +345,8 @@ int nova_mmap_to_new_blocks(struct vm_area_struct *vma,
 	time = current_time(inode).tv_sec;
 
 	epoch_id = nova_get_epoch_id(sb);
-	update.tail = pi->log_tail;
+	//update.tail = pi->log_tail;
+	update.tail = percpu_log_head(pi, cpuid);
 	update.alter_tail = pi->alter_log_tail;
 
 	entryc = (metadata_csum == 0) ? entry : &entry_copy;
@@ -456,7 +459,7 @@ int nova_mmap_to_new_blocks(struct vm_area_struct *vma,
 		goto out;
 
 	nova_memunlock_inode(sb, pi);
-	nova_update_inode(sb, inode, pi, &update, 1);
+	nova_update_inode(sb, inode, pi, &update, 1, cpuid);
 	nova_memlock_inode(sb, pi);
 
 	/* Update file tree */
