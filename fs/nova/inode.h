@@ -100,10 +100,10 @@ struct nova_inode_info_header {
 	u64 alter_log_head;		/* Alternate log head pointer */
 	u64 alter_log_tail;		/* Alternate log tail pointer */
 	u8  i_blk_type;
-	struct range_lock_tree range_lock_tree;	/* Per-inode range lock tree */
-
+	void* segment_bitmap_ptr;
+	
 	/* For synchronization of write threads */
-	struct qspinlock time_lock;
+	struct qspinlock bitmap_lock;
 	struct qspinlock alloc_lock;
 	struct qspinlock tail_lock;
 	struct qspinlock size_lock;
@@ -268,8 +268,6 @@ static inline void nova_update_inode_parallel(struct super_block *sb,
 	struct inode *inode, struct nova_inode *pi,
 	struct nova_inode_update *update, int update_alter)
 {
-	struct nova_inode_info *si = NOVA_I(inode);
-	struct nova_inode_info_header *sih = &si->header;
 
     /* We do not need to update sih->log_tail,
         because we already did it */
