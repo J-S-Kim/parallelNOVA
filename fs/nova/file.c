@@ -887,7 +887,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	/* Update tail periodically */
 	if(is_last_entry(update.tail, log_entry_size)){
 		/* Only single thread performs periodic pmem tail update */
-		if (queued_spin_trylock(&sih->alloc_lock) == 0) goto updated;
+		if (queued_spin_trylock(&sih->periodic_lock) == 0) goto updated;
 		queued_spin_lock(&sih->tail_lock);
 		curr_tail = pi->log_tail;
 		curr_sih_tail = sih->log_tail;
@@ -916,7 +916,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 		pi->log_tail = curr_tail;
 		nova_flush_buffer(&pi->log_tail, CACHELINE_SIZE, 1);
 	}
-	queued_spin_unlock(&sih->alloc_lock);
+	queued_spin_unlock(&sih->periodic_lock);
 
 updated:
 	data_bits = blk_type_to_shift[sih->i_blk_type];
@@ -946,14 +946,14 @@ updated:
 	nova_dbgv("blocks: %lu, %lu\n", inode->i_blocks, sih->i_blocks);
 
 	*ppos = pos;
-	queued_spin_lock(&sih->size_lock);
+	queued_spin_lock(&sih->vsize_lock);
 	if (pos > inode->i_size) {
 		i_size_write(inode, pos);
 		//sih->i_size = pos;
 	}
 
 	sih->trans_id++;
-	queued_spin_unlock(&sih->size_lock);
+	queued_spin_unlock(&sih->vsize_lock);
 out:
 	if (ret < 0)
 		nova_cleanup_incomplete_write(sb, sih, blocknr, allocated,

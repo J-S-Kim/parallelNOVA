@@ -103,15 +103,15 @@ struct nova_inode_info_header {
 	void* segment_bitmap_ptr;
 	
 	/* For synchronization of write threads */
-	struct qspinlock bitmap_lock;
-	struct qspinlock alloc_lock;
-	struct qspinlock tail_lock;
-	struct qspinlock size_lock;
-	struct qspinlock log_lock;
-	struct qspinlock block_lock;
-	struct qspinlock tree_lock;
+	//struct qspinlock bitmap_lock; 
+	struct qspinlock periodic_lock;	/* For periodic tail update */
+	struct qspinlock tail_lock;	/* For sih->tail update */
+	struct qspinlock size_lock;	/* For NOVA inode size */
+	struct qspinlock vsize_lock;	/* For vfs inode size */
+	struct qspinlock block_lock;	/* For block # */
+	struct qspinlock tree_lock;	/* For radix tree */
 	struct qspinlock inval_lock;
-	struct qspinlock entry_lock;
+	struct qspinlock entry_lock; 
 		
 };
 

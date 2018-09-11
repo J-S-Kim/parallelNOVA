@@ -63,11 +63,11 @@ void nova_init_header(struct super_block *sb,
 	sih->i_blk_type = NOVA_DEFAULT_BLOCK_TYPE;
 	sih->segment_bitmap_ptr = kmalloc(SEGMENT_BITMAP_SIZE, GFP_KERNEL);
 
-	sih->bitmap_lock.val.counter=0;
-	sih->alloc_lock.val.counter=0;
+	//sih->bitmap_lock.val.counter=0;
+	sih->periodic_lock.val.counter=0;
 	sih->tail_lock.val.counter=0;
 	sih->size_lock.val.counter=0;
-	sih->log_lock.val.counter=0;
+	sih->vsize_lock.val.counter=0;
 	sih->block_lock.val.counter=0;
 	sih->tree_lock.val.counter=0;
 	sih->inval_lock.val.counter=0;
