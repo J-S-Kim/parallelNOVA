@@ -48,6 +48,7 @@
 #include <linux/pagevec.h>
 #include <asm-generic/qspinlock.h>
 #include <linux/range_lock.h>
+#include <linux/rwsem.h>
 
 #include "nova_def.h"
 #include "stats.h"
@@ -990,6 +991,10 @@ void nova_init_file_write_entry(struct super_block *sb,
 	struct nova_inode_info_header *sih, struct nova_file_write_entry *entry,
 	u64 epoch_id, u64 pgoff, int num_pages, u64 blocknr, u32 time,
 	u64 size);
+void nova_init_file_write_entry_parallel(struct super_block *sb,
+	struct nova_inode_info_header *sih, struct nova_file_write_entry *entry,
+	u64 epoch_id, u64 pgoff, int num_pages, u64 blocknr, u32 time,
+	u64 size, u64 trans_id);
 int nova_reassign_file_tree(struct super_block *sb,
 	struct nova_inode_info_header *sih, u64 begin_tail);
 int nova_reassign_file_tree_parallel(struct super_block *sb,

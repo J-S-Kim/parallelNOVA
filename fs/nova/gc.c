@@ -725,11 +725,15 @@ int nova_inode_log_fast_gc(struct super_block *sb,
 		blocks++;
 
 	if (force_thorough || (blocks && blocks * 2 < checked_pages)) {
-		nova_dbgv("Thorough GC for inode %lu: checked pages %lu, valid pages %lu\n",
+		nova_dbg("Thorough GC for inode %lu: checked pages %lu, valid pages %lu\n",
 				sih->ino,
 				checked_pages, blocks);
+		up_read(&sih->gc_sem);
+		down_write(&sih->gc_sem);
 		blocks = nova_inode_log_thorough_gc(sb, pi, sih,
 							blocks, checked_pages);
+		up_write(&sih->gc_sem);
+		down_read(&sih->gc_sem);
 		if (metadata_csum)
 			nova_inode_alter_log_thorough_gc(sb, pi, sih,
 							blocks, checked_pages);

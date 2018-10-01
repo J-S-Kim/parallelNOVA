@@ -72,6 +72,8 @@ void nova_init_header(struct super_block *sb,
 	sih->tree_lock.val.counter=0;
 	sih->inval_lock.val.counter=0;
 	sih->entry_lock.val.counter=0;
+
+	init_rwsem(&sih->gc_sem);
 }
 
 static inline void set_scan_bm(unsigned long bit,

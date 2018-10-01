@@ -1298,6 +1298,7 @@ int nova_notify_change(struct dentry *dentry, struct iattr *attr)
 	u64 epoch_id;
 	timing_t setattr_time;
 
+	down_write(&sih->gc_sem);
 	NOVA_START_TIMING(setattr_t, setattr_time);
 	if (!pi) {
 		ret = -EACCES;
@@ -1337,6 +1338,7 @@ int nova_notify_change(struct dentry *dentry, struct iattr *attr)
 
 	sih->trans_id++;
 out:
+	up_write(&sih->gc_sem);
 	NOVA_END_TIMING(setattr_t, setattr_time);
 	return ret;
 }

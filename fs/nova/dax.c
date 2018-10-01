@@ -313,6 +313,27 @@ void nova_init_file_write_entry(struct super_block *sb,
 	entry->size = file_size;
 }
 
+void nova_init_file_write_entry_parallel(struct super_block *sb,
+	struct nova_inode_info_header *sih, struct nova_file_write_entry *entry,
+	u64 epoch_id, u64 pgoff, int num_pages, u64 blocknr, u32 time,
+	u64 file_size, u64 trans_id)
+{
+	memset(entry, 0, sizeof(struct nova_file_write_entry));
+	entry->entry_type = FILE_WRITE;
+	entry->reassigned = 0;
+	entry->updating = 0;
+	entry->epoch_id = epoch_id;
+	entry->trans_id = trans_id;
+	entry->pgoff = cpu_to_le64(pgoff);
+	entry->num_pages = cpu_to_le32(num_pages);
+	entry->invalid_pages = 0;
+	entry->block = cpu_to_le64(nova_get_block_off(sb, blocknr,
+							sih->i_blk_type));
+	entry->mtime = cpu_to_le32(time);
+
+	entry->size = file_size;
+}
+
 int nova_protect_file_data(struct super_block *sb, struct inode *inode,
 	loff_t pos, size_t count, const char __user *buf, unsigned long blocknr,
 	bool inplace)

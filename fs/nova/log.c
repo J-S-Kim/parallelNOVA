@@ -267,6 +267,54 @@ out:
 	return num_free;
 }
 
+unsigned int nova_free_old_entry_parallel(struct super_block *sb,
+	struct nova_inode_info_header *sih,
+	struct nova_file_write_entry *entry,
+	unsigned long pgoff, unsigned int num_free,
+	bool delete_dead, u64 epoch_id)
+{
+	struct nova_file_write_entry *entryc, entry_copy;
+	unsigned long old_nvmm;
+	int ret;
+	timing_t free_time;
+
+	if (!entry)
+		return 0;
+
+	NOVA_START_TIMING(free_old_t, free_time);
+
+	if (metadata_csum == 0)
+		entryc = entry;
+	else {
+		entryc = &entry_copy;
+		if (!nova_verify_entry_csum(sb, entry, entryc))
+			return -EIO;
+	}
+
+	old_nvmm = get_nvmm(sb, sih, entryc, pgoff);
+
+	if (!delete_dead) {
+		ret = nova_append_data_to_snapshot(sb, entryc, old_nvmm,
+				num_free, epoch_id);
+		if (ret == 0) {
+			nova_invalidate_write_entry_parallel(sb, entry, 1, 0, sih);
+			goto out;
+		}
+
+		nova_invalidate_write_entry_parallel(sb, entry, 1, num_free, sih);
+	}
+
+	nova_dbgv("%s: pgoff %lu, free %u blocks\n",
+				__func__, pgoff, num_free);
+	nova_free_data_blocks(sb, sih, old_nvmm, num_free);
+
+out:
+	sih->i_blocks -= num_free;
+
+	NOVA_END_TIMING(free_old_t, free_time);
+	return num_free;
+}
+
 struct nova_file_write_entry *nova_find_next_entry(struct super_block *sb,
 	struct nova_inode_info_header *sih, pgoff_t pgoff)
 {
@@ -980,6 +1028,8 @@ int nova_assign_write_entry(struct super_block *sb,
 		pentry = radix_tree_lookup_slot(&sih->tree, curr_pgoff);
 		if (pentry) {
 			old_entry = radix_tree_deref_slot(pentry);
+			if (curr_pgoff < old_entry->pgoff)
+				nova_dbg("curr_pgoff is out of bound.. %d < %d\n", curr_pgoff, old_entry->pgoff);
 			if (old_entry != start_old_entry) {
 				if (start_old_entry && free)
 					nova_free_old_entry(sb, sih,
@@ -1047,11 +1097,12 @@ int nova_assign_write_entry_parallel(struct super_block *sb,
 			old_entry = radix_tree_deref_slot(pentry);
 			if (old_entry != start_old_entry) {
 				if (start_old_entry && free)
-					nova_free_old_entry(sb, sih,
+					nova_free_old_entry_parallel(sb, sih,
 							start_old_entry,
 							start_old_pgoff,
 							num_free, false,
 							entryc->epoch_id);
+				PERSISTENT_BARRIER();
 				nova_invalidate_write_entry_parallel(sb,
 						start_old_entry, 1, 0, sih);
 
@@ -1073,7 +1124,7 @@ int nova_assign_write_entry_parallel(struct super_block *sb,
 	}
 
 	if (start_old_entry && free)
-		nova_free_old_entry(sb, sih, start_old_entry,
+		nova_free_old_entry_parallel(sb, sih, start_old_entry,
 					start_old_pgoff, num_free, false,
 					entryc->epoch_id);
 

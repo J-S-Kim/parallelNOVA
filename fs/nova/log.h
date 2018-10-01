@@ -279,6 +279,11 @@ unsigned int nova_free_old_entry(struct super_block *sb,
 	struct nova_file_write_entry *entry,
 	unsigned long pgoff, unsigned int num_free,
 	bool delete_dead, u64 epoch_id);
+unsigned int nova_free_old_entry_parallel(struct super_block *sb,
+	struct nova_inode_info_header *sih,
+	struct nova_file_write_entry *entry,
+	unsigned long pgoff, unsigned int num_free,
+	bool delete_dead, u64 epoch_id);
 int nova_free_inode_log(struct super_block *sb, struct nova_inode *pi,
 	struct nova_inode_info_header *sih);
 int nova_update_alter_pages(struct super_block *sb, struct nova_inode *pi,

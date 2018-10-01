@@ -658,6 +658,8 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	u64 *new_tails, *tmp_new_tails;
 	unsigned long num_new_tails = 0, size_new_tail_arr = MAX_NEW_TAILS;
 	int i;
+	u64 trans_id;
+	u8 type;
 
 	if (len == 0)
 		return 0;
@@ -719,6 +721,9 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 
 	new_tails = kmalloc(sizeof(u64) * size_new_tail_arr, GFP_KERNEL);
 
+	/* Can this go downward more? */
+	down_read(&sih->gc_sem);
+
 	while (num_blocks > 0) {
 		queued_spin_lock(&sih->tail_lock);
 		update.tail = sih->log_tail;
@@ -727,10 +732,12 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 		log_entry_size = nova_get_log_entry_size(sb, 1);
 		curr_p = nova_get_append_head(sb, pi, sih, update.tail, log_entry_size, MAIN_LOG, 0, &extended);
 		sih->log_tail = new_tail = curr_p + log_entry_size;
+		trans_id = sih->trans_id;
+		sih->trans_id++;
 		queued_spin_unlock(&sih->tail_lock);
 
 		if (num_new_tails >= size_new_tail_arr){
-			nova_dbg("new tails array is full! expanding...inode: %ld, start:%lld, size:%lu, %lu >= %lu\n", inode->i_ino, *ppos, count, num_new_tails, size_new_tail_arr);
+			//nova_dbg("new tails array is full! expanding...inode: %ld, start:%lld, size:%lu, %lu >= %lu\n", inode->i_ino, *ppos, count, num_new_tails, size_new_tail_arr);
 			if (new_tails){
 				tmp_new_tails = kmalloc(sizeof(u64) * size_new_tail_arr * 2, GFP_KERNEL);
 				for (i = 0 ; i < size_new_tail_arr ; i++)
@@ -802,9 +809,9 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 		sih->i_size = file_size;
 		queued_spin_unlock(&sih->size_lock);
 
-		nova_init_file_write_entry(sb, sih, &entry_data, epoch_id,
+		nova_init_file_write_entry_parallel(sb, sih, &entry_data, epoch_id,
 				start_blk, allocated, blocknr, time,
-				file_size);
+				file_size, trans_id);
 
 		ret = nova_append_file_write_entry_parallel(sb, pi, inode,
 				&entry_data, &update, curr_p);
@@ -860,10 +867,14 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 				}	
 			}
 			curr_addr = (void *)nova_get_block(sb, curr_tail);
-			curr_entry = (struct nova_file_write_entry *)curr_addr;
+			type = nova_get_entry_type(curr_addr);
+			log_entry_size = nova_get_log_entry_size(sb, type);
+			if (type == FILE_WRITE) {
+				curr_entry = (struct nova_file_write_entry *)curr_addr;
 
-			if(curr_entry->committed != 1)
-				break;
+				if(curr_entry->committed != 1)
+					break;
+			}
 
 			curr_tail += log_entry_size;
 		}
@@ -908,7 +919,6 @@ updated:
 		//sih->i_size = pos;
 	}
 
-	sih->trans_id++;
 	queued_spin_unlock(&sih->size_lock);
 out:
 	if (ret < 0)
@@ -920,6 +930,8 @@ out:
 
 	if (try_inplace)
 		return do_nova_inplace_file_write(filp, buf, len, ppos);
+
+	up_read(&sih->gc_sem);
 
 	range_write_unlock(&(sih->range_lock_tree), &nova_inode_lock);
 
