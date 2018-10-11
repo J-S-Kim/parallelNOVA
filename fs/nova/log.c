@@ -561,11 +561,15 @@ static int nova_append_log_entry(struct super_block *sb,
 	else
 		size = nova_get_log_entry_size(sb, type);
 
+	queued_spin_lock(&sih->tail_lock);
+
 	tail = update->tail;
 	alter_tail = update->alter_tail;
 
 	curr_p = nova_get_append_head(sb, pi, sih, tail, size,
 						MAIN_LOG, 0, &extended);
+	queued_spin_unlock(&sih->tail_lock);
+	
 	if (curr_p == 0)
 		return -ENOSPC;
 

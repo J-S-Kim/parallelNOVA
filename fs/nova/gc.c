@@ -258,6 +258,7 @@ static int nova_gc_assign_new_entry(struct super_block *sb,
 	addr = (void *)nova_get_block(sb, curr_p);
 	type = nova_get_entry_type(addr);
 	switch (type) {
+	nova_dbg("nova_gc_assign_new_entry type : %u",type);
 	case SET_ATTR:
 		sih->last_setattr = new_curr;
 		break;
@@ -728,12 +729,21 @@ int nova_inode_log_fast_gc(struct super_block *sb,
 		nova_dbg("Thorough GC for inode %lu: checked pages %lu, valid pages %lu\n",
 				sih->ino,
 				checked_pages, blocks);
-		up_read(&sih->gc_sem);
+		//up_read(&sih->gc_sem);
+		//queued_spin_unlock(&sih->tail_lock);
 		down_write(&sih->gc_sem);
+
+		/*if ( down_write_trylock(&sih->gc_sem) == 0 ) {
+			queued_spin_lock(&sih->tail_lock);
+			down_read(&sih->gc_sem);
+			return 0;
+		}*/
+			
 		blocks = nova_inode_log_thorough_gc(sb, pi, sih,
 							blocks, checked_pages);
 		up_write(&sih->gc_sem);
-		down_read(&sih->gc_sem);
+		//queued_spin_lock(&sih->tail_lock);
+		//down_read(&sih->gc_sem);
 		if (metadata_csum)
 			nova_inode_alter_log_thorough_gc(sb, pi, sih,
 							blocks, checked_pages);

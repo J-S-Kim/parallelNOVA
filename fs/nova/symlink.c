@@ -38,6 +38,8 @@ int nova_block_symlink(struct super_block *sb, struct nova_inode *pi,
 	u32 time;
 	int ret;
 
+	nova_dbg("nova symlink!!\n");
+
 	update.tail = sih->log_tail;
 	update.alter_tail = sih->alter_log_tail;
 

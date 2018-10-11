@@ -203,6 +203,9 @@ static long nova_fallocate(struct file *file, int mode, loff_t offset,
 	 */
 
 	/* We only support the FALLOC_FL_KEEP_SIZE mode */
+	
+	nova_dbg("nova fallocate!!\n");
+
 	if (mode & ~FALLOC_FL_KEEP_SIZE)
 		return -EOPNOTSUPP;
 
@@ -725,6 +728,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 	down_read(&sih->gc_sem);
 
 	while (num_blocks > 0) {
+		up_read(&sih->gc_sem);
 		queued_spin_lock(&sih->tail_lock);
 		update.tail = sih->log_tail;
 		update.alter_tail = sih->alter_log_tail;
@@ -735,6 +739,7 @@ static ssize_t do_nova_cow_file_write(struct file *filp,
 		trans_id = sih->trans_id;
 		sih->trans_id++;
 		queued_spin_unlock(&sih->tail_lock);
+		down_read(&sih->gc_sem);
 
 		if (num_new_tails >= size_new_tail_arr){
 			//nova_dbg("new tails array is full! expanding...inode: %ld, start:%lld, size:%lu, %lu >= %lu\n", inode->i_ino, *ppos, count, num_new_tails, size_new_tail_arr);
@@ -956,7 +961,7 @@ ssize_t nova_cow_file_write(struct file *filp,
 	if (len == 0)
 		return 0;
 
-	sb_start_write(inode->i_sb);
+	//sb_start_write(inode->i_sb);
 	//NOVA_START_TIMING(inode_lock_t, time);
 	//inode_lock(inode);
 	//NOVA_END_TIMING(inode_lock_t, time);
@@ -964,7 +969,7 @@ ssize_t nova_cow_file_write(struct file *filp,
 	ret = do_nova_cow_file_write(filp, buf, len, ppos);
 
 	//inode_unlock(inode);
-	sb_end_write(inode->i_sb);
+	//sb_end_write(inode->i_sb);
 
 	return ret;
 }
@@ -1049,7 +1054,7 @@ static ssize_t nova_wrap_rw_iter(struct kiocb *iocb, struct iov_iter *iter)
 
 	if (iov_iter_rw(iter) == WRITE)  {
 		sb_start_write(inode->i_sb);
-		inode_lock(inode);
+		//inode_lock(inode);
 	} else {
 		inode_lock_shared(inode);
 	}
@@ -1080,7 +1085,7 @@ static ssize_t nova_wrap_rw_iter(struct kiocb *iocb, struct iov_iter *iter)
 	ret = written;
 err:
 	if (iov_iter_rw(iter) == WRITE)  {
-		inode_unlock(inode);
+		//inode_unlock(inode);
 		sb_end_write(inode->i_sb);
 	} else {
 		inode_unlock_shared(inode);

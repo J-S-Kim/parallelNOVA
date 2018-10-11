@@ -1298,6 +1298,7 @@ int nova_notify_change(struct dentry *dentry, struct iattr *attr)
 	u64 epoch_id;
 	timing_t setattr_time;
 
+	nova_dbg("nova_notify_change!! set attr !!\n");
 	down_write(&sih->gc_sem);
 	NOVA_START_TIMING(setattr_t, setattr_time);
 	if (!pi) {
